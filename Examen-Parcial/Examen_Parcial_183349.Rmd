@@ -1,0 +1,370 @@
+---
+title: "Estadística Computacional"
+date: "October 7, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(gtools)
+library(dplyr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Parcial 1
+***
+##### 183349 - Sonia López Rito
+##### 183352 - María Soledad Jassel Pérez Flores
+***
+
+#### 1.	Manipulación y Visualización de Datos en R   
+\
+La base de datos iris, contenida en el paquete base de R, contiene las medidas en centímetros de algunos atributos de 50 flores de 3 especies del género Iris. Si la unidad observacional es una flor:
+
+```{r IRIS, echo = FALSE }
+knitr::include_graphics(path = c("C:/Users/sperez/Documents/GitHub/EST_COMP_LB_2018/Examen-Parcial/iris.png"))
+```
+
+\
+a. ¿Cumple la base de datos el principio de datos limpios? Justifique su respuesta.  
+\
+*Considerando que una flor está definida por los atributos largo de sépalo, ancho de sépalo, largo de pétalo, ancho de pétalo y especie, cada variable forma una columna, también cumple que cada tipo de unidad observacional forma una tabla, en este caso la unidad observacional está compuesta por las 5 variables, pero el principio de que cada valor de la unidad observacional forma un renglón se rompe, ya que hay 1 registro duplicado (143). Por tanto, no cumple con el principio de datos limpios.*  
+\
+*Validando este último principio: * 
+
+```{r iris}
+anyDuplicated(iris)
+```
+\
+b. En caso de que no cumpla el principio de datos limpios, limpie los datos. Imprima las primeras 6 líneas de los datos limpios (si ya estaban limpios entonces imprima las primeras 6 líneas de los datos originales).  
+\
+*Limpiando los datos:*
+
+```{r }
+iris_limpio <- iris[!duplicated(iris), ]
+```
+
+*Impresión de las primeras 6 lineas*
+
+```{r }
+head(iris_limpio)
+```
+\
+Cada una de las siguientes preguntas requiere utilizar la base de datos con datos limpios del inciso b:  
+\
+c. ¿Cuántas observaciones y cuántas variables tiene la base de datos?  
+\
+*149 observaciones con 5 variables*  
+```{r }
+str(iris_limpio)
+```
+\
+d. ¿Cuál es la clase atómica de cada una de las variables?  
+\
+*Sepal.Length: numérico*   
+*Sepal.Width : numérico*  
+*Petal.Length: numérico*  
+*Petal.Width : numérico*  
+*Species     : Factor/caracter*  
+\
+e.	Filtre las flores de la especie (variable Species) Setosa e imprima las primeras 6 observaciones. 
+
+```{r, warning=FALSE}
+iris_setosa <- filter(iris_limpio, Species == "setosa")
+head(iris_setosa)
+```
+\
+f. Ordene la base de datos de manera descendente con respecto a la variable Petal.Length e imprima las primeras 6 observaciones. 
+
+```{r, warning=FALSE}
+iris_ordenado <- arrange(iris_limpio, desc(Petal.Length))
+head(iris_ordenado)
+```
+\
+g. Cree una nueva variable en donde se muestre el atributo Sepal.Length en milímetros e imprima las primeras 6 observaciones.
+
+```{r, warning=FALSE}
+iris_extendida <- mutate(iris_limpio, Sepal.Length_mm = Sepal.Length*10)
+head(iris_extendida)
+```
+\
+h. Elimine las observaciones con valores faltantes en la variable Sepal.Width e indique el número de observaciones de la nueva base de datos.
+
+```{r, warning=FALSE}
+iris_perd <- filter(iris_limpio, !is.na(Sepal.Width ))
+str(iris_perd)
+```
+\
+*149 observaciones con 5 variables*  
+\
+i. ¿Cuál es la media de la variable Petal.Width para cada una de las especies (variable Species) de flores?
+
+```{r }
+SpeciesG <- group_by(iris_perd, Species) #Agrupa por especies
+summarise(SpeciesG, mean_PW = mean(Petal.Width) ) 
+```
+\
+j.	Realice una gráfica de dispersión de las variables x=Sepal.Length contra y=Sepal.Width en la que se distingan las diferentes especies (variable Species) por color o por forma de los puntos. La gráfica debe incluir título y nombres de los ejes horizontal y vertical.
+\
+```{r }
+ggplot(iris_limpio) + 
+   geom_point(aes(x = Sepal.Length, y = Sepal.Width, color = Species))+
+   labs(x = "Largo de sépalo",y = "Ancho de sépalo",title = "Sépalos por especie")
+```
+\
+k. Realice una gráfica de cajas de la variable Petal.Length en la que se distingan las diferentes especies (variable Species). 
+```{r }
+ggplot(iris_limpio, aes(x = Species, y = Petal.Length )) + 
+  geom_boxplot()
+```
+
+
+#### 2.	Espacio de Probabilidad y Variables Aleatorias  
+\
+Considere un experimento que consiste en una carrera de caballos con tres caballos numerados del 1 al 3. Si no está permitido que dos o más caballos lleguen a la meta en la misma posición:  
+\
+a. ¿Cuál es el espacio de resultados $\Omega$ del experimento?
+```{r }
+n <- 3 #Número de caballos
+Omega <- data.frame(permutations(n,n))  #Espacios de resultados del experimento
+Omega
+```
+\
+Asumiendo que todos los elementos del espacio de resultados $\omega \in \Omega$ tienen la misma probabilidad ($\omega$) de ocurrir:  
+\
+b. ¿Cuál es esta probabilidad ($\omega$)?
+```{r }
+CPos <- nrow(Omega) #Número de casos posibles
+(Pw <- 1/CPos) # Probalidad de P(w)
+```
+\
+Si $A$ denota el evento en el que el caballo número 1 llega a la meta dentro de las primeras dos posiciones y $B$ denota el evento en el que el caballo número 3 llega a la meta en la segunda posición.  
+\
+c. ¿Cuáles son los elementos de los eventos $A$ y $B$, respectivamente? 
+```{r }
+A <- Omega[Omega$X1 == 1 | Omega$X2 == 1, ] # Elementos de A
+B <- Omega[Omega$X2 == 3, ]  #Elementos de B
+A
+B
+```
+\
+d. ¿Cuáles son los elementos del evento $A\bigcap B$?  
+```{r }
+merge(A, B)
+```
+\
+e. ¿Cuáles son los elementos del evento $A\bigcup B$? 
+```{r }
+merge(B, A, all=T)
+```
+\
+f. ¿Cuál es la probabilidad $(B)$ de que ocurra el evento $B$?
+```{r }
+PB <- nrow(B)/CPos
+PB
+```
+\
+Sea $X:\Omega \rightarrow R$ una variable aleatoria que describe la posición en la que llegó a la meta el caballo número 2:  
+\
+g. Liste los valores ($\omega$) que toma la variable $X$ para cada uno de los elementos $\omega \in \Omega$.
+```{r }
+ pos2 <- numeric(CPos) # Lista de posiciones que toma el caballo 2
+for(i in 1:CPos) {
+  if(Omega[i,1]== 2) { 
+    pos2[i] <- 1
+  }else { 
+    if(Omega[i,2]== 2) { 
+    pos2[i] <- 2
+    }else {    
+    pos2[i] <- 3
+    }
+  }
+}
+pos2
+```
+\
+h. ¿Cuál es la probabilidad $(X=1$)? 
+```{r }
+sum(pos2==1)/length(pos2)
+```
+
+
+#### 3. Probabilidad Condicional  
+\
+Considere 3 urnas. La urna A contiene 2 pelotas blancas y 4 pelotas negras, la urna B contiene 8 pelotas blancas y 4 negras, la urna C contiene 1 pelota blanca y 3 negras. Si se selecciona 1 pelota de cada urna: ¿cuál es la probabilidad de que la pelota seleccionada de la urna A sea blanca dado que exactamente 2 de las 3 pelotas seleccionadas son blancas? 
+```{r }
+#A: La pelota seleccionada de la urna A es blanca
+#B: 2 de las pelotas seleccionas son blancas
+#P(A|B)=P(A???B)/P(B)
+B <- function(){
+  urna_A <- c(paste("B", 1:2, sep = ""), paste("N", 1:4, sep = ""))
+  urna_B <- c(paste("B", 1:8, sep = ""), paste("N", 1:4, sep = ""))
+  urna_C <- c(paste("B", 1:1, sep = ""), paste("N", 1:3, sep = ""))
+  muestra <- c(sample(urna_A, 1, replace = FALSE),sample(urna_B, 1, replace = FALSE),sample(urna_C, 1, replace = FALSE))
+  muestra
+  n_blancas <- sum(substr(muestra, 1, 1) == "B")  
+  n_blancas == 2  # Hay exactamente 2 blancas
+}
+probaB <- rerun(10000, B()) %>% flatten_dbl() %>% mean()
+
+AiB <- function(){
+  urna_A <- c(paste("B", 1:2, sep = ""), paste("N", 1:4, sep = ""))
+  urna_B <- c(paste("B", 1:8, sep = ""), paste("N", 1:4, sep = ""))
+  urna_C <- c(paste("B", 1:1, sep = ""), paste("N", 1:3, sep = ""))
+  muestra <- c(sample(urna_A, 1, replace = FALSE),sample(urna_B, 1, replace = FALSE),sample(urna_C, 1, replace = FALSE))
+  muestra
+  a_blanca <- ((3*sum(substr(muestra[1], 1, 1) == "B"))+sum(substr(muestra[2:3], 1, 1) == "B"))/4
+  a_blanca ==1   # La bola de la urna A es blanca
+}
+probaAiB <- rerun(10000, AiB ()) %>% flatten_dbl() %>% mean()
+probaAiB/probaB # P(A|B)
+```
+
+
+#### 4.	Bootstrap  
+Se desea simular muestras de tamaño 20 de una distribución exponencial con tasa $\lambda = 1 / \beta = 1$.  
+El estadístico de interés $\hat{\theta}$ es el estimador de la media $\theta = \beta$. Siga el siguiente procedimiento:  
+\
+i. Utilice la función $rexp()$ (y la semilla 261285) para generar una muestra aleatoria de tamaño 20 de una distribución exponencial con $\beta = 1$.
+\
+ii.	Genere 2,000 muestras bootstrap y calcule intervalos de confianza con coeficiente de confianza de 95% para $\hat{\theta}$ usando 1) el método normal, 2) percentiles y 3)$BC_a$.
+
+\
+a) Repita 500 veces el procedimiento descrito y llena la siguiente tabla (utilice una sola vez la semilla): 
+
+\
+La columna Cobertura es una estimación de la cobertura del intervalo basada en las simulaciones; para calcularla simplemente escriba el porcentaje de los intervalos que incluyeron el verdadero valor del parámetro.
+```{r,warning=FALSE}
+#Función para generar los intervalos de confianza
+beta <- 1
+intervalos_calc <- function(n = 20, B = 2000) {
+    x <- rexp(n, rate = 1/beta)
+    theta <- mean(x) 
+    theta_b <- rerun(B, sample(x, size = n, replace = TRUE)) %>% #Muestras tamaño n con remplazo
+        map_dbl(~ mean(.)) #Percentiles 
+    bc_a <- bootstrap::bcanon(x, nboot = B, theta = function(y) mean(y), 
+        alpha = c(0.025, 0.975))$confpoints[, 2] #Bias-corrected and accelerated 
+    #Seleccionamos confpoints para obtener los rangos estimados bca
+    intervalos <- data_frame(metodo = c("Normal", "Percentiles", "BC_a"), 
+        izq = c(theta - 1.96 * sd(theta_b), quantile(theta_b, probs = 0.025), bc_a[1]),
+        der = c(theta + 1.96 * sd(theta_b), quantile(theta_b, probs = 0.975), bc_a[2]))
+    list(theta = theta, intervalos = intervalos)}
+```
+
+```{r}
+set.seed(261285)
+n_sim <- 500
+sim_intervalos <- rerun(n_sim, intervalos_calc())
+sim_500 <- sim_intervalos %>% 
+              map_df(~.$intervalos) %>% #unir simulaciones
+              group_by(metodo) %>%
+              summarise(
+                fallo_izquierda = 100 * sum(izq > beta)/n_sim,
+                fallo_derecha = 100 * sum(der < beta)/n_sim,
+                cobertura = 100 - fallo_izquierda - fallo_derecha)
+```
+
+```{r,echo=FALSE, warning=FALSE, results='asis'}
+library(knitr)
+kable(sim_500)
+```
+
+\
+b. Realice una gráfica de paneles: en cada panel mostrará los resultados de uno de los métodos (normal, percentil, y $BC_a$), en el eje horizontal graficará el número de intervalos de confianza (1,2,3,...,500) y en el eje vertical graficará los intervalos, es decir, graficará 2 líneas (use la función geom_line): una corresponderá a los límites inferiores de los intervalos y la otra a los superiores.
+
+```{r, warning=FALSE}
+intervalos_muestra <- sim_intervalos %>% 
+    map_df(~.$intervalos) %>% #unir en una lista las simulaciones
+    mutate(intervalos = rep(1:n_sim, each = 3)) %>% #Agregar variable de numeración
+    mutate(sim_factor = reorder(intervalos, der - izq), 
+        intervalos = as.numeric(sim_factor))
+
+thetas <- sim_intervalos %>% 
+    map_dbl(~.$theta) 
+
+thetas_df <- data_frame(thetas = thetas, intervalos = 1:n_sim) %>% 
+        mutate(sim_factor = factor(intervalos, levels = levels(intervalos_muestra$sim_factor)), 
+          intervalos = as.numeric(sim_factor)) 
+
+ggplot(intervalos_muestra) +
+    geom_hline(yintercept = beta, alpha = 1) +
+    geom_line(aes(x = intervalos, y = izq), color = "blue", alpha = 1) +
+    geom_line(aes(x = intervalos, y = der), color = "blue", alpha = 1) +
+    geom_line(data = thetas_df, aes(x = intervalos, y = thetas), color = "red", alpha = 1) +
+    facet_wrap(~ metodo, ncol = 1, labeller = "label_both")
+```
+
+
+#### 5.	Simulación de Variables Aleatorias    
+
+Una variable aleatoria $X$ distribución binomial con parámetros $n$ y $p$, esto es, $X \sim Binomial (n,p)$ si su función de masa de probabilidad es: $$p_i = P \{ X = i \} = {{n}\choose{i}} p^i (1-p)^{n-i}, i \in \{0, 1, ...,n \}$$  
+ El objetivo es generar $X$ a partir de una variable aleatoria $U$ con distribución uniforme continua en el intervalo (0,1), esto es, $U \sim Uniforme (0,1)$ utilizando el Método de Transformación Inversa Discreta. La clave para utilizar este método en el presente caso es seguir un procedimiento análogo al que se siguió en clase para la distribución Poisson:    
+\
+a. Encuentre la relación de recurrencia entre $p_{i+1}$ y $p_i$ para $i>0$.  
+$$p_{i+1} ={{n}\choose{i+1}} p^{i+1} (1-p)^{n-(i+1)} $$
+Desarrollando se tiene: $$p_{i+1} =\frac{n!}{(i+1)!(n-(i+1))!}  p^{i+1} (1-p)^{n-(i+1)}$$
+Entonces: $$p_{i+1} =\frac{n!}{(i+1)i!\frac{(n-i)(n-i-1)!}{(n-i)}}  p^ip (1-p)^{n-i}(1-p)^{-1}$$
+
+$$p_{i+1} =\frac{(n-i)}{(i+1)}\frac{p}{(1-p)}\frac{n!}{i!(n-i)!} * p^i  (1-p)^{n-i}$$
+
+$$p_{i+1} =\frac{n-i}{i+1}\frac{p}{1-p}{{n}\choose{i}} p^i (1-p)^{n-i}$$
+\
+Por lo tanto:
+$$p_{i+1} =\frac{n-i}{i+1}\frac{p}{1-p} * p_i , i \in \{0, 1, ...,n-1\}$$
+\
+b. Utilizando la relación de recurrencia del inciso a., escriba un algoritmo de 5 pasos que genere una variable aleatoria binomial con parámetros $n$ y $p$ mediante el Método de Transformación Inversa Discreta.  
+\
+1. Generar un número aleatorio $U$, tal que $U \in (0,1)$
+\
+2. Inicializar: $i=0$, $P = (1-p)^n$, $F = P$, $r=\frac{p}{(1-p)}$
+\
+3. Si $U<F$, definir $X=i$ y parar.
+\
+4. En caso contrario redefinir $P = \frac{(n-i)}{(i+1)}\frac{p}{(1-p)} * P$, $F=F+P$, $i=i+1$ 
+\
+5. Volver a 3
+\
+
+c. Escriba en R una función que implemente el algoritmo del inciso $b$ para $n=10$ y $p=0.3$.
+\
+
+```{r, warning=FALSE}
+#Binomial usando Inversión
+rbinomialI <- function(n = 10, p = 0.3){
+  U <- runif(1)
+  i <- 0
+  r <- p / (1 - p)
+  p <- (1 - p) ^ n
+  P <- p
+  while(U >= P){
+    p <- ((n - i) * r) / (i+1) * p
+    P <- P + p
+    i <- i + 1
+  }
+  i
+}
+```
+
+\
+d. Realice 10,000 simulaciones utilizando la semilla 221285 y reporte las primeras 5 simulaciones obtenidas.
+```{r, warning=FALSE}
+set.seed(221285)
+sims_binom <- rerun(10000, rbinomialI()) %>% flatten_dbl()
+sims_binom[1:5]
+```
+
+
+\
+e. Genere un histograma con las 10,000 simulaciones anteriores y compárelo con una distribución construida utilizando la función $dbinom$ de R.
+
+```{r}
+ggplot() +
+  geom_histogram(aes(x = sims_binom, y = ..density..), binwidth = 1) +
+  geom_line(aes(x=0:10, y= dbinom(0:10,10,0.3)), col = "red")
+```
+
+
+
+
+
